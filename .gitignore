@@ -1,0 +1,4 @@
+# Virtual environment
+my_venv/
+__pycache__/
+my_bert_model/

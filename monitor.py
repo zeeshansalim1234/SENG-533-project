@@ -25,10 +25,9 @@ if flask_process is None:
 with open('metrics.csv', 'w', newline='') as file:
     writer = csv.writer(file)
     writer.writerow(["Timestamp", "CPU Usage (%)", "Memory Usage (MB)", "Memory Usage (%)", "Disk Read Bytes", "Disk Write Bytes"])
-    flask_process.cpu_percent(interval=None)
     try:
         while True:
-            cpu_usage = flask_process.cpu_percent(interval=None)
+            cpu_usage = flask_process.cpu_percent(interval=1)
             memory_info = flask_process.memory_info()
             memory_usage_mb = memory_info.rss / (1024 * 1024) # Convert to MB
             memory_usage_percent = (memory_info.rss / psutil.virtual_memory().total) * 100
@@ -42,7 +41,7 @@ with open('metrics.csv', 'w', newline='') as file:
 
             writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), formatted_cpu_usage, memory_usage_mb, memory_usage_percent, disk_read_bytes, disk_write_bytes])
 
-            time.sleep(2)
+            time.sleep(1)
     except KeyboardInterrupt:
         print("Monitoring stopped.")
 

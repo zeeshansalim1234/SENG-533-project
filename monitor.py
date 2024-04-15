@@ -7,31 +7,42 @@ from datetime import datetime
 subprocess.Popen(["python", "app.py"])
 
 def get_process(name):
-    for proc in psutil.process_iter(['pid', 'name']):
-        if proc.info['name'] == 'python.exe' or proc.info['name'] == 'pythonw.exe':
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        if proc.info['name'] in ('python.exe', 'pythonw.exe'):
             try:
-                for line in proc.cmdline():
-                    if name in line:
-                        return proc
+                if name in ' '.join(proc.info['cmdline']):
+                    return proc
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 pass
     return None
-
+# flask startup
+time.sleep(5)
 
 flask_process = get_process("app.py")
 if flask_process is None:
     raise Exception("Flask application is not running")
 
-with open('memory_and_cpu.csv', 'w', newline='') as file:
+with open('metrics.csv', 'w', newline='') as file:
     writer = csv.writer(file)
-    writer.writerow(["Timestamp", "CPU Usage (%)", "Memory Usage (MB)"])
-    #write the data to the csv file every 1 seconds
+    writer.writerow(["Timestamp", "CPU Usage (%)", "Memory Usage (MB)", "Memory Usage (%)", "Disk Read Bytes", "Disk Write Bytes"])
+    flask_process.cpu_percent(interval=None)
     try:
         while True:
-            cpu_usage = flask_process.cpu_percent(interval=1)
+            cpu_usage = flask_process.cpu_percent(interval=None)
             memory_info = flask_process.memory_info()
-            memory_usage = memory_info.rss / (1024 * 1024) #mb measureent
-            formatted_cpu_usage = f"{cpu_usage:.10f}"
-            writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), formatted_cpu_usage, memory_usage])
+            memory_usage_mb = memory_info.rss / (1024 * 1024) # Convert to MB
+            memory_usage_percent = (memory_info.rss / psutil.virtual_memory().total) * 100
+            # Format CPU usage to 4 decimal places
+            formatted_cpu_usage = f"{cpu_usage:.4f}"
+
+        
+            io_counters = flask_process.io_counters()
+            disk_read_bytes = io_counters.read_bytes
+            disk_write_bytes = io_counters.write_bytes
+
+            writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), formatted_cpu_usage, memory_usage_mb, memory_usage_percent, disk_read_bytes, disk_write_bytes])
+
+            time.sleep(2)
     except KeyboardInterrupt:
         print("Monitoring stopped.")
+

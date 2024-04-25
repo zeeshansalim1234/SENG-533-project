@@ -40,8 +40,7 @@ with open('metrics.csv', 'w', newline='') as file:
             disk_write_bytes = io_counters.write_bytes
 
             writer.writerow([datetime.now().strftime("%Y-%m-%d %H:%M:%S"), formatted_cpu_usage, memory_usage_mb, memory_usage_percent, disk_read_bytes, disk_write_bytes])
-
+            file.flush()
             time.sleep(1)
     except KeyboardInterrupt:
         print("Monitoring stopped.")
-
